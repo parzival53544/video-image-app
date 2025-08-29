@@ -1,51 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Gerar Vídeo</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Gerador de Vídeo Vertical</title>
   <style>
-    body, html { margin:0; padding:0; height:100%; font-family:Arial,sans-serif; background:#f5f5f5; }
-    .container { display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center; }
-    input, button { padding:10px; margin:5px; font-size:16px; }
-    button { cursor:pointer; background:#4caf50; color:white; border:none; border-radius:5px; }
-    #loading { display:none; margin-top:20px; font-size:18px; color:#333; }
+    body,html{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f6fb}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center}
+    .card{background:#fff;padding:28px;border-radius:12px;box-shadow:0 8px 30px rgba(33,47,80,0.08);width:420px;text-align:center}
+    input{width:100%;padding:10px;margin-top:8px}
+    button{margin-top:12px;padding:10px 16px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer}
+    #loading{display:none;margin-top:14px;color:#333;font-weight:600}
   </style>
 </head>
 <body>
-<div class="container">
-  <h1>Upload de Imagem e Vídeo</h1>
-  <form id="upload-form" method="post" enctype="multipart/form-data">
-    <label>Imagem:</label><br>
-    <input type="file" name="image" required><br><br>
-    <label>Vídeo (para pegar áudio):</label><br>
-    <input type="file" name="video" required><br><br>
-    <button type="submit">OK</button>
-  </form>
+  <div class="wrap">
+    <div class="card">
+      <h2>Gerador de Vídeo Vertical</h2>
+      <form id="form" action="/process" method="post" enctype="multipart/form-data">
+        <label>Imagem (será usada como frame):</label>
+        <input type="file" name="image" accept="image/*" required>
+        <label>Vídeo (usaremos o áudio):</label>
+        <input type="file" name="video" accept="video/*" required>
+        <button type="submit">Gerar Vídeo</button>
+      </form>
+      <div id="loading">Processando... aguarde (pode levar alguns segundos)</div>
+    </div>
+  </div>
 
-  <div id="loading">Processando... aguarde</div>
-</div>
-
-<script>
-const form = document.getElementById("upload-form");
-const loading = document.getElementById("loading");
-
-form.addEventListener("submit", function(e) {
-    e.preventDefault();
-    const formData = new FormData(form);
-
-    // Mostra mensagem de carregando
-    loading.style.display = "block";
-
-    fetch("/", { method: "POST", body: formData })
-    .then(response => response.text())
-    .then(html => {
-        // Quando terminar, substitui pelo HTML de download
-        document.body.innerHTML = html;
-    })
-    .catch(err => {
-        loading.style.display = "none";
-        alert("Erro: " + err);
-    });
-});
-</script>
+  <script>
+    const form = document.getElementById('form');
+    const loading = document.getElementById('loading');
+    form.addEventListener('submit', () => { loading.style.display = 'block'; });
+  </script>
 </body>
 </html>
