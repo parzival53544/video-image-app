@@ -9,14 +9,19 @@
     .wrap{min-height:100%;display:flex;align-items:center;justify-content:center}
     .card{background:#fff;padding:28px;border-radius:12px;box-shadow:0 8px 30px rgba(33,47,80,0.08);width:420px;text-align:center}
     a.btn{display:inline-block;margin-top:14px;padding:10px 16px;border-radius:8px;background:#0ea5e9;color:#fff;text-decoration:none;font-weight:700}
+    video{margin-top:14px;max-width:100%;border-radius:10px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h2>Vídeo pronto!</h2>
-      <p>Clique no botão para baixar o arquivo gerado.</p>
-      <a class="btn" href="{{ url_for('download', filename=filename) }}">Baixar Vídeo</a>
+      <h2>✅ Vídeo pronto!</h2>
+      <video controls>
+        <source src="{{ url_for('download', filename=filename) }}" type="video/mp4">
+        Seu navegador não suporta vídeo.
+      </video>
+      <br/>
+      <a class="btn" href="{{ url_for('download', filename=filename) }}">⬇️ Baixar Vídeo</a>
     </div>
   </div>
 </body>

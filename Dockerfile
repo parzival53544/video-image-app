@@ -1,33 +1,28 @@
-# Dockerfile para Render (Flask + pydub + ffmpeg)
+# Use imagem oficial Python 3.11
 FROM python:3.11-slim
 
-# Evita prompts interativos
+# Evita prompts interativos no apt
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
-ENV PORT=5000
 
-# Instala dependências do sistema (inclui ffmpeg)
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    build-essential \
-    libsndfile1 \
- && rm -rf /var/lib/apt/lists/*
+# Atualiza sistema e instala ffmpeg
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Cria diretório da app
+# Diretório da aplicação
 WORKDIR /app
 
-# Copia requirements e instala dependências Python
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt \
-    && pip install --no-cache-dir gunicorn
-
-# Copia o restante do projeto
+# Copia arquivos do projeto
 COPY . /app
 
-# Expondo a porta usada pela app
+# Instala dependências Python
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+# Gunicorn para deploy
+RUN pip install --no-cache-dir gunicorn
+
+# Porta que Render usará
 EXPOSE 5000
 
-# Comando que o Render irá executar (gunicorn serve app: main:app)
-# Ajuste o number de workers conforme necessidade (4 é razoável para pequenos serviços)
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "main:app"]
+# Comando de start via Gunicorn
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5000", "--timeout", "300", "main:app"]

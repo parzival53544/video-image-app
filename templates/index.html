@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Gerador de Vídeo Vertical</title>
+  <title>Gerador de Vídeo Vertical (Imagem + Áudio do Vídeo)</title>
   <style>
     body,html{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f6fb}
     .wrap{min-height:100%;display:flex;align-items:center;justify-content:center}
@@ -16,15 +16,17 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <h2>Gerador de Vídeo Vertical</h2>
+      <h2>Gerar Vídeo Vertical</h2>
       <form id="form" action="/process" method="post" enctype="multipart/form-data">
-        <label>Imagem (será usada como frame):</label>
+        <label>Imagem (usada como o vídeo):</label>
         <input type="file" name="image" accept="image/*" required>
-        <label>Vídeo (usaremos o áudio):</label>
+
+        <label>Vídeo (usaremos o ÁUDIO dele):</label>
         <input type="file" name="video" accept="video/*" required>
-        <button type="submit">Gerar Vídeo</button>
+
+        <button type="submit">OK</button>
       </form>
-      <div id="loading">Processando... aguarde (pode levar alguns segundos)</div>
+      <div id="loading">Processando... aguarde</div>
     </div>
   </div>
 
