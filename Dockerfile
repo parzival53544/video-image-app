@@ -1,28 +1,20 @@
-# Use imagem oficial Python 3.11
+# Imagem base oficial do Python
 FROM python:3.11-slim
 
-# Evita prompts interativos no apt
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Atualiza sistema e instala ffmpeg
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Diretório da aplicação
+# Define diretório de trabalho
 WORKDIR /app
 
-# Copia arquivos do projeto
+# Copia todos os arquivos do projeto para o container
 COPY . /app
 
-# Instala dependências Python
-RUN pip install --no-cache-dir --upgrade pip
+# Instala dependências do Python
 RUN pip install --no-cache-dir -r requirements.txt
-# Gunicorn para deploy
-RUN pip install --no-cache-dir gunicorn
 
-# Porta que Render usará
-EXPOSE 5000
+# Instala FFmpeg
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
-# Comando de start via Gunicorn
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5000", "--timeout", "300", "main:app"]
+# Expondo a porta padrão do Render
+EXPOSE 10000
+
+# Comando para rodar a aplicação com Gunicorn
+CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:10000", "main:app"]
