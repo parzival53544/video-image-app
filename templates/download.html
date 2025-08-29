@@ -1,33 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Download Pronto</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-        }
-        a {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        a:hover {
-            background-color: #45a049;
-        }
-    </style>
+    <title>Download</title>
 </head>
-<body>
+<body style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh;">
     <h1>Vídeo pronto!</h1>
-    <a href="/download/{{ filename }}">Clique aqui para baixar</a>
+    <a href="/download/{{ filename }}" download>Baixar Vídeo</a>
 </body>
 </html>
