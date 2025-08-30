@@ -5,9 +5,9 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Instala dependências do sistema (FFmpeg é essencial para MoviePy)
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y ffmpeg libsm6 libxext6 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copia os arquivos do projeto
 COPY requirements.txt requirements.txt
