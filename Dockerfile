@@ -1,22 +1,23 @@
-# Usa imagem oficial do Python
-FROM python:3.10-slim
+# Use imagem oficial do Python
+FROM python:3.11-slim
 
-# Define pasta de trabalho
-WORKDIR /app
-
-# Instala dependências do sistema (FFmpeg é essencial para MoviePy)
+# Atualiza sistema e instala FFmpeg
 RUN apt-get update && \
     apt-get install -y ffmpeg libsm6 libxext6 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copia os arquivos do projeto
-COPY requirements.txt requirements.txt
+# Define diretório de trabalho
+WORKDIR /app
+
+# Copia arquivos do projeto
+COPY . /app
+
+# Atualiza pip e instala dependências
+RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Expõe porta padrão do Flask/Gunicorn
+EXPOSE 5000
 
-# Expõe a porta usada pelo Flask/Render
-EXPOSE 10000
-
-# Comando para rodar no Render (Gunicorn é mais estável que flask run)
-CMD sh -c "gunicorn --bind 0.0.0.0:$PORT --timeout 300 main:app"
+# Comando para rodar a aplicação
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]

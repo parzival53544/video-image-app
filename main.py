@@ -4,7 +4,6 @@ import subprocess
 from flask import Flask, request, render_template, send_file
 
 app = Flask(__name__)
-
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "outputs"
 
@@ -12,66 +11,49 @@ OUTPUT_FOLDER = "outputs"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-
-def run_cmd(cmd):
-    """Executa comando FFmpeg e lança erro se falhar"""
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if proc.returncode != 0:
-        raise RuntimeError(f"Erro FFmpeg: {proc.stderr}")
-    return proc.stdout
-
-
-def remove_silence(input_audio, output_audio):
-    """Remove silêncio do início e fim do áudio"""
-    cmd = [
-        "ffmpeg", "-y", "-i", input_audio,
-        "-af",
-        "silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.3:"\
-        "stop_periods=1:stop_threshold=-50dB:stop_silence=0.3",
-        "-c:a", "aac", "-b:a", "320k",
-        output_audio
-    ]
-    run_cmd(cmd)
-
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        video_file = request.files.get("video")
-        image_file = request.files.get("image")
+        image = request.files.get("image")
+        video = request.files.get("video")
 
-        if not video_file or not image_file:
-            return "Por favor, envie um vídeo e uma imagem.", 400
+        if not image or not video:
+            return "Por favor, envie uma imagem e um vídeo.", 400
 
         # Nomes únicos
-        video_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_{video_file.filename}")
-        image_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_{image_file.filename}")
-        output_path = os.path.join(OUTPUT_FOLDER, f"{os.path.splitext(image_file.filename)[0]}.mp4")
-        trimmed_audio_path = os.path.join(UPLOAD_FOLDER, f"trimmed_{uuid.uuid4()}.aac")
+        image_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_{image.filename}")
+        video_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_{video.filename}")
+        output_name = os.path.splitext(image.filename)[0] + ".mp4"
+        output_path = os.path.join(OUTPUT_FOLDER, output_name)
 
-        video_file.save(video_path)
-        image_file.save(image_path)
+        image.save(image_path)
+        video.save(video_path)
 
         # Extrai áudio do vídeo
         audio_path = os.path.join(UPLOAD_FOLDER, f"audio_{uuid.uuid4()}.aac")
-        run_cmd(["ffmpeg", "-y", "-i", video_path, "-vn", "-c:a", "aac", audio_path])
+        subprocess.run([
+            "ffmpeg", "-y", "-i", video_path, "-vn", "-c:a", "aac", audio_path
+        ], check=True)
 
-        # Remove silêncio do início e fim
-        remove_silence(audio_path, trimmed_audio_path)
+        # Ajusta imagem para vertical 1080x1920 sem esticar
+        resized_image = os.path.join(UPLOAD_FOLDER, f"resized_{uuid.uuid4()}.png")
+        subprocess.run([
+            "ffmpeg", "-y", "-i", image_path,
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
+            resized_image
+        ], check=True)
 
-        # Gera vídeo vertical 1080x1920 com imagem cobrindo toda a tela
-        cmd = [
-            "ffmpeg", "-y", "-loop", "1", "-i", image_path, "-i", trimmed_audio_path,
-            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,"\
-                   "pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
+        # Combina imagem + áudio em vídeo final
+        subprocess.run([
+            "ffmpeg", "-y", "-loop", "1", "-i", resized_image,
+            "-i", audio_path,
             "-c:v", "libx264", "-tune", "stillimage",
             "-c:a", "aac", "-b:a", "320k",
             "-pix_fmt", "yuv420p", "-shortest",
             output_path
-        ]
-        run_cmd(cmd)
+        ], check=True)
 
-        return render_template("download.html", filename=os.path.basename(output_path))
+        return render_template("download.html", filename=output_name)
 
     return render_template("index.html")
 
@@ -82,4 +64,4 @@ def download(filename):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run(debug=True, host="0.0.0.0", port=5000)
