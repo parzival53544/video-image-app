@@ -19,4 +19,4 @@ COPY . .
 EXPOSE 10000
 
 # Comando para rodar no Render (Gunicorn é mais estável que flask run)
-CMD ["gunicorn", "-b", "0.0.0.0:10000", "main:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "--timeout", "300", "main:app"]

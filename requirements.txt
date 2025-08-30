@@ -2,3 +2,4 @@ flask==2.3.2
 moviepy==1.0.3
 pillow==9.5.0
 gunicorn==20.1.0
+python-dotenv
