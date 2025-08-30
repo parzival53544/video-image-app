@@ -2,31 +2,31 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Download</title>
+    <title>Download do Vídeo</title>
     <style>
         body {
-            background-color: #000;
+            background: #000;
             color: #fff;
-            font-family: Arial, sans-serif;
+            font-family: sans-serif;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
             margin: 0;
         }
         a {
             margin-top: 20px;
             padding: 10px 20px;
-            background-color: #111;
-            border: 1px solid #fff;
-            color: #fff;
+            background: #fff;
+            color: #000;
             text-decoration: none;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1>Pronto! Seu vídeo está pronto para download.</h1>
-    <a href="{{ url_for('download', filename=filename) }}">Baixar Vídeo</a>
+    <h1>Vídeo pronto!</h1>
+    <a href="{{ url_for('download', filename=filename) }}">Baixar vídeo</a>
 </body>
 </html>
