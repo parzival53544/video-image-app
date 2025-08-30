@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: video-generator
+    env: docker
+    plan: free
+    branch: main
+    autoDeploy: true
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
