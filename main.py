@@ -1,7 +1,7 @@
 import os
 import uuid
 import subprocess
-from flask import Flask, request, render_template, send_file, redirect, url_for
+from flask import Flask, request, render_template, send_file
 
 app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
@@ -10,73 +10,59 @@ OUTPUT_FOLDER = "outputs"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# Função para rodar comando ffmpeg e capturar erros
-def run_ffmpeg(cmd):
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if result.returncode != 0:
-        raise RuntimeError(f"Erro no ffmpeg: {result.stderr}")
-    return result
-
-# Remove silêncios do início e fim do áudio
-def trim_audio(input_audio, output_audio):
+def trim_audio(input_path, output_path):
+    """
+    Corta silêncios do início e do fim do áudio usando ffmpeg.
+    """
     cmd = [
-        "ffmpeg", "-y", "-i", input_audio,
-        "-af", "silenceremove=start_periods=1:start_threshold=-40dB:start_silence=0.5:stop_periods=1:stop_threshold=-40dB:stop_silence=0.5",
-        "-c:a", "aac", "-b:a", "320k",
-        output_audio
+        "ffmpeg", "-y", "-i", input_path,
+        "-af",
+        "silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.3:" +
+        "stop_periods=1:stop_threshold=-50dB:stop_silence=0.3",
+        "-c:a", "aac", "-b:a", "320k", output_path
     ]
-    run_ffmpeg(cmd)
+    subprocess.run(cmd, check=True)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        image = request.files.get("image")
-        video = request.files.get("video")
+        video_file = request.files.get("video")
+        image_file = request.files.get("image")
 
-        if not image or not video:
-            return "Por favor, envie uma imagem e um vídeo.", 400
+        if not video_file or not image_file:
+            return "Por favor, envie um vídeo e uma imagem.", 400
 
-        # Caminhos de upload
-        image_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_{image.filename}")
-        video_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_{video.filename}")
+        # Salva arquivos
+        video_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_{video_file.filename}")
+        image_path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4()}_{image_file.filename}")
+        video_file.save(video_path)
+        image_file.save(image_path)
 
-        image.save(image_path)
-        video.save(video_path)
+        # Extrai áudio
+        audio_path = os.path.join(UPLOAD_FOLDER, f"audio_{uuid.uuid4()}.aac")
+        subprocess.run([
+            "ffmpeg", "-y", "-i", video_path,
+            "-vn", "-c:a", "aac", "-b:a", "320k", audio_path
+        ], check=True)
 
-        # Nome final baseado na imagem
-        final_filename = f"{os.path.splitext(image.filename)[0]}.mp4"
-        output_path = os.path.join(OUTPUT_FOLDER, final_filename)
+        # Corta silêncios
+        trimmed_audio_path = os.path.join(UPLOAD_FOLDER, f"trimmed_{uuid.uuid4()}.aac")
+        trim_audio(audio_path, trimmed_audio_path)
 
-        # Ajusta imagem para 1080x1920
-        resized_image = os.path.join(UPLOAD_FOLDER, f"resized_{uuid.uuid4()}.png")
-        run_ffmpeg([
-            "ffmpeg", "-y", "-i", image_path,
-            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
-            resized_image
-        ])
-
-        # Extrai áudio do vídeo
-        audio_file = os.path.join(UPLOAD_FOLDER, f"audio_{uuid.uuid4()}.aac")
-        run_ffmpeg([
-            "ffmpeg", "-y", "-i", video_path, "-vn",
-            "-c:a", "aac", audio_file
-        ])
-
-        # Remove silêncios
-        trimmed_audio = os.path.join(UPLOAD_FOLDER, f"trimmed_{uuid.uuid4()}.aac")
-        trim_audio(audio_file, trimmed_audio)
-
-        # Combina imagem + áudio
-        run_ffmpeg([
-            "ffmpeg", "-y", "-loop", "1", "-i", resized_image,
-            "-i", trimmed_audio,
+        # Cria vídeo final (imagem + áudio)
+        output_filename = f"{os.path.splitext(image_file.filename)[0]}.mp4"
+        output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+        subprocess.run([
+            "ffmpeg", "-y", "-loop", "1", "-i", image_path,
+            "-i", trimmed_audio_path,
             "-c:v", "libx264", "-tune", "stillimage",
             "-c:a", "aac", "-b:a", "320k",
             "-pix_fmt", "yuv420p", "-shortest",
+            "-vf", "scale=1080:1920",
             output_path
-        ])
+        ], check=True)
 
-        return render_template("download.html", filename=final_filename)
+        return render_template("download.html", filename=output_filename)
 
     return render_template("index.html")
 
@@ -87,4 +73,4 @@ def download(filename):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)
